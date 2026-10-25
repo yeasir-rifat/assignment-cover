@@ -15,7 +15,7 @@
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#080808" media="(prefers-color-scheme: dark)">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>CoverX - Document Cover Generator</title>
+  <title>Assignment Cover Generator — GAU</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Carlito:wght@400;700&family=Lato:wght@400;500;600;700;800&family=Playfair+Display:wght@700&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -1943,11 +1943,23 @@ function openSettingsPanel() {
   const c = document.getElementById('settingsCloseBtn');
   if (c) setTimeout(() => c.focus({ preventScroll: true }), 50);
 }
+// On desktop (>=1280px) the settings panel is always visible, so it must never be inert
+const _deskMQ = window.matchMedia('(min-width: 1280px)');
+function syncSettingsInert() {
+  const p = document.getElementById('settingsPanel');
+  if (!p) return;
+  if (_deskMQ.matches) p.inert = false;
+  else if (!p.classList.contains('open')) p.inert = true;
+}
+if (_deskMQ.addEventListener) _deskMQ.addEventListener('change', syncSettingsInert);
+else if (_deskMQ.addListener) _deskMQ.addListener(syncSettingsInert);
+syncSettingsInert();
+
 function closeSettingsPanel() {
   const panel = document.getElementById('settingsPanel');
   const wasOpen = panel.classList.contains('open');
   panel.classList.remove('open');
-  panel.inert = true;
+  panel.inert = !_deskMQ.matches;
   document.getElementById('settingsOverlay').classList.remove('open');
   if (wasOpen) { const b = document.getElementById('settingsBtn'); if (b) b.focus({ preventScroll: true }); }
 }
