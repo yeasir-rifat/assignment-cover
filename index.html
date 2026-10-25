@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="CoverX">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#080808" media="(prefers-color-scheme: dark)">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Assignment Cover Generator — GAU</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,6 +50,12 @@
   --r-sm:        0.75rem;
   --r-md:        1.1rem;
   --r-lg:        1.5rem;
+}
+
+/* ── No browser zoom on touch screens (pinch / double-tap); only the PDF page has its own zoom ── */
+html, body { touch-action: pan-x pan-y; overflow-x: hidden; max-width: 100%; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+@media (pointer: coarse) {
+  input, textarea, select { font-size: 16px !important; } /* stops iOS from auto-zooming when a field is focused */
 }
 
 body {
@@ -853,8 +859,8 @@ select:invalid, select option[value=""] { color: var(--text-muted); }
 .detail-colon { width:5px; text-align:center; font-weight:600; }
 .detail-value { flex:1; padding-left:8px; }
 .teacher-entry { margin-bottom:0.8rem; }
-.teacher-name-cv  { font-family:var(--info-family); font-weight:var(--info-weight); font-size:var(--info-size); color:var(--info-color); }
-.teacher-detail-cv{ font-family:var(--info-family); font-size:calc(var(--info-size) * 0.78); font-weight:600; color:var(--info-color); }
+.teacher-name-cv  { font-family:var(--info-family); font-weight:700; font-size:var(--info-size); color:var(--info-color); }
+.teacher-detail-cv{ font-family:var(--info-family); font-size:calc(var(--info-size) * 0.78); font-weight:700; color:var(--info-color); }
 .footer-seal { margin-top:auto; text-align:center; display:flex; flex-direction:column; align-items:center; gap:0.3rem; }
 .logo-place  { width:100px; height:100px; display:flex; align-items:center; justify-content:center; margin:0 auto 0.5rem; }
 .logo-place img { width:100px; height:100px; object-fit:contain; }
@@ -925,8 +931,8 @@ select:invalid, select option[value=""] { color: var(--text-muted); }
 .layout-futuristic {
   background:linear-gradient(155deg, #0a1520 0%, #0d1f2b 45%, #0a1a28 100%);
 }
-.f-bg-img { opacity:0.9; }
-.f-bg-tint { position:absolute; inset:0; z-index:1; pointer-events:none; background:linear-gradient(155deg, rgba(8,18,28,0.80) 0%, rgba(10,24,36,0.74) 50%, rgba(8,20,32,0.82) 100%); }
+.f-bg-img { opacity:1; }
+.f-bg-tint { position:absolute; inset:0; z-index:1; pointer-events:none; background:linear-gradient(155deg, rgba(8,18,28,0.58) 0%, rgba(10,24,36,0.50) 50%, rgba(8,20,32,0.62) 100%); }
 .f-grid-overlay {
   position:absolute; inset:0; z-index:1; opacity:0.16;
   background-image:
@@ -1315,8 +1321,102 @@ button:not(.cdd-trigger):focus-visible, [role="button"]:focus-visible, .layout-o
 .field-error, .form-group input.field-error, .form-group textarea.field-error {
   border-color: #d64545 !important; box-shadow: 0 0 0 1px #d64545 !important;
 }
+
+/* ── Background arrows, zoom and thumbnails ── */
+.preview-row { display:flex; align-items:center; gap:12px; width:100%; max-width:calc(var(--pv-w, 560px) + 112px); }
+.preview-stage { flex:1 1 auto; min-width:0; max-width:var(--pv-w, 560px); margin:0 auto; position:relative; }
+.preview-viewport { width:100%; padding:8px; display:flex; overflow:auto; overscroll-behavior:contain; box-sizing:border-box; touch-action:pan-x pan-y; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }
+.preview-viewport .preview-frame-wrap { max-width:none; margin:auto; flex:0 0 auto; }
+.preview-dock { display:flex; flex-direction:column; align-items:center; width:100%; }
+.preview-viewport.zoomed { cursor:grab; }
+.preview-viewport.panning { cursor:grabbing; user-select:none; }
+.bg-arrow { flex:0 0 auto; width:44px; height:44px; border-radius:50%; border:1px solid var(--border); background:var(--surface); color:var(--text-1); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; box-shadow:0 2px 8px rgba(0,0,0,0.12); transition:background .15s, color .15s, transform .15s; }
+.bg-arrow:hover { background:var(--teal); color:#fff; border-color:var(--teal); transform:scale(1.07); }
+.zoom-bar { display:flex; align-items:center; gap:2px; margin-top:0.8rem; padding:3px; background:var(--surface); border:1px solid var(--border); border-radius:999px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+.zoom-bar button { height:32px; min-width:34px; padding:0 8px; border:0; background:transparent; color:var(--text-1); border-radius:999px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:0.8rem; font-weight:600; font-family:inherit; }
+.zoom-bar button:hover { background:var(--teal-muted); color:var(--teal); }
+.zoom-bar button:disabled { opacity:0.35; cursor:default; background:transparent; color:var(--text-1); }
+.zoom-bar .zoom-val { min-width:58px; }
+.zoom-row { display:flex; align-items:center; justify-content:center; gap:12px; margin-top:0.8rem; }
+.zoom-row .zoom-bar { margin-top:0; }
+.bg-arrow-m { display:none; }
+.bg-thumbs { display:none; }
+@media (min-width: 961px) {
+  .bg-thumbs { display:flex; gap:8px; width:100%; max-width:var(--pv-w); margin-top:0.9rem; padding:8px; overflow-x:auto; overflow-y:hidden; scroll-behavior:smooth; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); scrollbar-width:thin; }
+  .bg-thumb { flex:0 0 auto; width:46px; height:65px; padding:0; border:2px solid transparent; border-radius:4px; overflow:hidden; background:#e8e8e8; cursor:pointer; opacity:0.75; transition:opacity .15s, border-color .15s, transform .15s; }
+  .bg-thumb:hover { opacity:1; transform:translateY(-2px); }
+  .bg-thumb.active { border-color:var(--teal); opacity:1; box-shadow:0 0 0 2px rgba(20,110,245,0.25); }
+  .bg-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+}
+@media (max-width: 960px) {
+  .preview-row { max-width:560px; }
+  .preview-row > .bg-arrow { display:none; }
+  .bg-arrow-m { display:flex; }
+  .mobile-actions { margin-top:0.6rem !important; }
+}
+.right-panel:not(.has-preview) .preview-row,
+.right-panel:not(.has-preview) .zoom-row,
+.right-panel:not(.has-preview) .bg-thumbs { display:none !important; }
+.bg-thumbs:empty { display:none !important; }
+
+
+/* ── Desktop / laptop: the whole preview column is the canvas; the page fits it and zooms inside it ── */
+@media (min-width: 961px) {
+  .right-panel { height:calc(100vh - 64px); position:sticky; top:64px; padding:0; align-items:stretch; overflow:hidden; }
+  .right-panel .preview-empty { margin:auto; }
+  .right-panel.has-preview .preview-row { flex:1 1 auto; min-height:0; width:100%; max-width:none; padding:18px 14px 0; gap:10px; }
+  .preview-stage { flex:1 1 auto; max-width:none; height:100%; margin:0; min-width:0; }
+  .preview-viewport { height:100%; padding:14px 14px 66px; border-radius:var(--r-lg); background:rgba(255,255,255,0.35); border:1px solid var(--border); box-shadow:inset 0 1px 6px rgba(0,0,0,0.05); }
+  .preview-viewport .preview-frame-wrap { box-shadow:0 18px 50px rgba(0,0,0,0.22), 0 3px 10px rgba(0,0,0,0.10); border-radius:4px; }
+  .preview-dock { position:relative; flex:0 0 auto; padding:0 14px 16px; }
+  .zoom-row { position:absolute; left:50%; bottom:100%; transform:translateX(-50%); margin:0 0 20px; z-index:5; }
+  .zoom-bar { background:rgba(255,255,255,0.92); backdrop-filter:blur(8px); box-shadow:0 6px 20px rgba(0,0,0,0.18); }
+  .bg-thumbs { max-width:none; margin-top:12px; }
+}
+
+/* ── Wider Style Settings panel + a canvas that hugs the page (no big empty sides) ── */
+@media (min-width: 1600px) {
+  .page-layout { padding-right:410px; }
+  .settings-panel { width:410px; max-width:410px; }
+}
+@media (min-width: 1800px) {
+  .page-layout { padding-right:460px; }
+  .settings-panel { width:460px; max-width:460px; }
+}
+@media (min-width: 961px) {
+  .right-panel.has-preview .preview-row { justify-content:center; }
+  .preview-stage { flex:1 1 auto; max-width:calc((100vh - 64px - 150px) * 0.7071 + 260px); }
+}
+
 /* ── Background button only applies to the Modern layout ── */
 html:not([data-layout="modern"]):not([data-layout="futuristic"]) .btn-bg-cycle { display: none !important; }
+
+/* ── Dark mode fixes: black canvas behind the page, readable zoom bar ── */
+html[data-theme="dark"] .preview-viewport { background:#000; border:1px solid var(--border); box-shadow:none; }
+html[data-theme="dark"] .preview-viewport .preview-frame-wrap { border-color:#363636; box-shadow:0 0 0 1px rgba(255,255,255,0.06), 0 18px 50px rgba(0,0,0,0.8); }
+html[data-theme="dark"] .zoom-bar { background:rgba(23,23,23,0.94); border-color:var(--border); box-shadow:0 6px 20px rgba(0,0,0,0.6); }
+html[data-theme="dark"] .zoom-bar button { color:#fff; }
+html[data-theme="dark"] .zoom-bar button:hover { background:var(--teal-muted); color:var(--teal); }
+html[data-theme="dark"] .zoom-bar button:disabled { color:#757575; opacity:1; background:transparent; }
+html[data-theme="dark"] .bg-arrow { background:var(--surface); color:#fff; border-color:var(--border); box-shadow:0 2px 8px rgba(0,0,0,0.5); }
+html[data-theme="dark"] .bg-arrow:hover { background:var(--teal); color:#080808; border-color:var(--teal); }
+html[data-theme="dark"] .bg-thumbs { background:var(--surface); border-color:var(--border); }
+
+/* ── Stronger neutral grey borders (inputs + cards), both themes ── */
+:root { --field-border:#A8A8A8; --field-border-hover:#7A7A7A; --card-border:#D0D0D0; }
+html[data-theme="dark"] { --field-border:#555555; --field-border-hover:#7C7C7C; --card-border:#303030; }
+input:not(:focus):not(.field-error), textarea:not(:focus):not(.field-error), select:not(:focus),
+.style-input:not(:focus), .style-select:not(:focus), .color-popover-custom input[type="text"]:not(:focus),
+.color-picker:not(.open) .color-picker-trigger, .cdd:not(.open) .cdd-trigger:not(:focus-visible) { border-color:var(--field-border); }
+input:not(:focus):not(.field-error):hover, textarea:not(:focus):not(.field-error):hover, select:not(:focus):hover,
+.color-picker:not(.open) .color-picker-trigger:hover, .cdd:not(.open) .cdd-trigger:not(:focus-visible):hover { border-color:var(--field-border-hover); }
+.cdd-menu, .color-picker-popover { border-color:var(--field-border); }
+.section-card, .teacher-card, .style-group, .bg-thumbs, .layout-option:not(.active), .btn-add-teacher, .btn-ghost { border-color:var(--card-border); }
+.section-card:hover, .teacher-card:hover { border-color:var(--field-border); }
+
+/* ── Hide scrollbars everywhere, scrolling still works ── */
+* { scrollbar-width:none !important; -ms-overflow-style:none !important; }
+*::-webkit-scrollbar, html::-webkit-scrollbar, body::-webkit-scrollbar { display:none !important; width:0 !important; height:0 !important; }
 </style>
 <script>
 (function(){
@@ -1607,25 +1707,34 @@ html:not([data-layout="modern"]):not([data-layout="futuristic"]) .btn-bg-cycle {
 
   <!-- RIGHT — Preview -->
   <main class="right-panel" id="rightPanel">
-    <div class="preview-toolbar">
-      <span class="preview-label">Live Preview</span>
-      <button class="btn-bg-cycle" id="bgCycleBtn" type="button" title="Change background">
-        <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-        <span id="bgCycleLabel">Change Background</span>
-      </button>
-    </div>
     <div class="preview-empty" id="previewEmpty">
       <svg aria-hidden="true" focusable="false" width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       <p>Start filling the form to see your cover page</p>
     </div>
-    <div class="preview-frame-wrap" id="previewFrameWrap" style="display:none;">
-      <div id="previewFrame"></div>
+    <div class="preview-row" id="previewRow">
+      <button type="button" class="bg-arrow js-bg-prev" title="Previous background" aria-label="Previous background"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <div class="preview-stage" id="previewStage">
+        <div class="preview-viewport" id="previewViewport">
+          <div class="preview-frame-wrap" id="previewFrameWrap" style="display:none;">
+            <div id="previewFrame"></div>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="bg-arrow js-bg-next" title="Next background" aria-label="Next background"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+    <div class="preview-dock" id="previewDock">
+    <div class="zoom-row" id="zoomRow">
+      <button type="button" class="bg-arrow bg-arrow-m js-bg-prev" title="Previous background" aria-label="Previous background"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div class="zoom-bar" id="zoomBar" role="group" aria-label="Zoom">
+      <button type="button" id="zoomOutBtn" title="Zoom out" aria-label="Zoom out"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+      <button type="button" id="zoomResetBtn" class="zoom-val" title="Reset zoom" aria-label="Reset zoom">100%</button>
+      <button type="button" id="zoomInBtn" title="Zoom in" aria-label="Zoom in"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    </div>
+      <button type="button" class="bg-arrow bg-arrow-m js-bg-next" title="Next background" aria-label="Next background"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+    <div class="bg-thumbs" id="bgThumbs" aria-label="Background previews"></div>
     </div>
     <div class="mobile-actions">
-      <button class="btn-bg-cycle btn-bg-cycle-mobile" id="bgCycleBtnMobile" type="button" title="Change background">
-        <svg aria-hidden="true" focusable="false" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-        <span>Change BG</span>
-      </button>
       <button class="btn-download-mobile" id="downloadBtnMobile" type="button" onclick="generateAndDownload()">
         <svg aria-hidden="true" focusable="false" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         <span>Download</span>
@@ -2353,8 +2462,6 @@ function buildCoverHTML_Futuristic(data, bgStyle, bgImg) {
   return `<div class="gau-cover layout-futuristic">
     ${bgImg ? `<img class="cover-bg f-bg-img" src="${bgImg}" alt="" onerror="this.style.display='none'">` : ''}
     <div class="f-bg-tint"></div>
-    <div class="bg-art" style="background-image:${bgStyle};"></div>
-    <div class="f-grid-overlay"></div>
     <div class="f-glow-a"></div>
     <div class="f-glow-b"></div>
     <div class="f-frame-corner f-frame-tl"></div>
@@ -2421,38 +2528,122 @@ function refreshPreview() {
   // Show the wrapper first so its real width can be measured, then fit the A4 page into it
   wrap.style.display = 'block';
   empty.style.display = 'none';
+  document.getElementById('rightPanel').classList.add('has-preview');
+  updateBgThumbs();
   fitPreview();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitCover(document.querySelector('#previewFrame .gau-cover')));
 }
 
-// Scale the 794px wide A4 page to the preview box's real inner width
+// Zoom state (1 = fit to the available width)
+let previewZoom = 1;
+const ZOOM_MIN = 0.5, ZOOM_MAX = 3;
+
+// Scale the 794px wide A4 page to the preview box's width × the zoom level
 function fitPreview() {
   const wrap = document.getElementById('previewFrameWrap');
   const frame = document.getElementById('previewFrame');
-  if (!wrap || !frame || wrap.style.display === 'none') return;
+  const vp = document.getElementById('previewViewport');
+  if (!wrap || !frame || !vp || wrap.style.display === 'none') return;
+  const desktop = window.matchMedia('(min-width: 961px)').matches;
+  const cs = getComputedStyle(vp);
+  const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+  const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  let baseW = vp.clientWidth - padX;
+  if (baseW <= 0) return; // hidden (e.g. the other mobile tab); the observer below refits when it becomes visible
+  if (desktop) {
+    // the canvas fills the column; "100%" = the whole A4 page fitted inside it
+    vp.style.height = '';
+    const baseH = vp.clientHeight - padY;
+    if (baseH <= 0) return;
+    baseW = Math.min(baseW, baseH * 794 / 1123);
+  } else {
+    // phones / tablets: the box is one A4 page tall at 100%; only the page inside it zooms
+    vp.style.height = (baseW * 1123 / 794 + padY) + 'px';
+  }
+  wrap.style.width = (baseW * previewZoom) + 'px';
   const ww = wrap.clientWidth;
-  if (!ww) return; // hidden (e.g. the other mobile tab); the observer below refits when it becomes visible
+  if (!ww) return;
   const scale = ww / 794;
   fitCover(frame.querySelector('.gau-cover'));
   frame.style.transform = `scale(${scale})`;
   wrap.style.height = (1123 * scale + (wrap.offsetHeight - wrap.clientHeight)) + 'px';
+  vp.classList.toggle('zoomed', previewZoom > 1.001);
+}
+
+function updateZoomUI() {
+  const r = document.getElementById('zoomResetBtn');
+  if (r) r.textContent = Math.round(previewZoom * 100) + '%';
+  const o = document.getElementById('zoomOutBtn'), i = document.getElementById('zoomInBtn');
+  if (o) o.disabled = previewZoom <= ZOOM_MIN + 0.001;
+  if (i) i.disabled = previewZoom >= ZOOM_MAX - 0.001;
+}
+function setZoom(z) {
+  z = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+  const vp = document.getElementById('previewViewport');
+  const wrap = document.getElementById('previewFrameWrap');
+  const oldW = wrap.clientWidth || 1, oldH = wrap.clientHeight || 1;
+  const rx = (vp.scrollLeft + vp.clientWidth / 2) / oldW; // keep the same point centred
+  const ry = (vp.scrollTop + vp.clientHeight / 2) / oldH;
+  previewZoom = z;
+  updateZoomUI();
+  fitPreview();
+  vp.scrollLeft = rx * wrap.clientWidth - vp.clientWidth / 2;
+  vp.scrollTop = ry * wrap.clientHeight - vp.clientHeight / 2;
 }
 
 window.addEventListener('resize', fitPreview);
 document.addEventListener('DOMContentLoaded', () => {
-  const wrap = document.getElementById('previewFrameWrap');
-  if (!wrap || !window.ResizeObserver) return;
-  let lastW = 0;
-  new ResizeObserver(() => {
-    if (wrap.clientWidth !== lastW) { lastW = wrap.clientWidth; fitPreview(); }
-  }).observe(wrap);
+  const vp = document.getElementById('previewViewport');
+  if (!vp) return;
+  if (window.ResizeObserver) {
+    let lastW = 0, lastH = 0;
+    new ResizeObserver(() => {
+      if (vp.clientWidth !== lastW || vp.clientHeight !== lastH) { lastW = vp.clientWidth; lastH = vp.clientHeight; fitPreview(); }
+    }).observe(vp);
+  }
+  document.getElementById('zoomInBtn').addEventListener('click', () => setZoom(previewZoom + 0.25));
+  document.getElementById('zoomOutBtn').addEventListener('click', () => setZoom(previewZoom - 0.25));
+  document.getElementById('zoomResetBtn').addEventListener('click', () => setZoom(1));
+  updateZoomUI();
+
+  // Ctrl / ⌘ + wheel (also trackpad pinch) zooms the page
+  vp.addEventListener('wheel', e => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    setZoom(previewZoom * Math.exp(-e.deltaY * 0.01));
+  }, { passive: false });
+
+  // Two-finger pinch on touch screens
+  let pinchD = 0, pinchZ = 1;
+  const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  vp.addEventListener('touchstart', e => { if (e.touches.length === 2) { pinchD = dist(e.touches); pinchZ = previewZoom; } }, { passive: true });
+  vp.addEventListener('touchmove', e => {
+    if (e.touches.length !== 2 || !pinchD) return;
+    e.preventDefault();
+    setZoom(pinchZ * dist(e.touches) / pinchD);
+  }, { passive: false });
+  vp.addEventListener('touchend', e => { if (e.touches.length < 2) pinchD = 0; });
+
+  // Mouse drag to pan when zoomed in
+  let drag = null;
+  vp.addEventListener('mousedown', e => {
+    if (e.button !== 0 || previewZoom <= 1.001) return;
+    drag = { x: e.clientX, y: e.clientY, sl: vp.scrollLeft, st: vp.scrollTop };
+    vp.classList.add('panning');
+  });
+  window.addEventListener('mousemove', e => {
+    if (!drag) return;
+    vp.scrollLeft = drag.sl - (e.clientX - drag.x);
+    vp.scrollTop = drag.st - (e.clientY - drag.y);
+  });
+  window.addEventListener('mouseup', () => { drag = null; vp.classList.remove('panning'); });
 });
 
 // If the background image folder is missing, drop the list so the cover falls back to texture-only (no broken image)
 function probeBackgrounds() {
   if (!BG_LIST.length) return;
   const im = new Image();
-  im.onerror = () => { BG_LIST.length = 0; bgImageIndex = 0; refreshPreview(); };
+  im.onerror = () => { BG_LIST.length = 0; bgImageIndex = 0; buildBgThumbs(); refreshPreview(); };
   im.src = BG_LIST[bgImageIndex] || BG_LIST[0];
 }
 
@@ -2474,6 +2665,67 @@ function cycleBackground() {
 
   refreshPreview();
 }
+
+// ── Background navigation: prev / next arrows + thumbnail strip (desktop) ──
+function setBackground(i) {
+  if (!BG_LIST.length) return;
+  const n = BG_LIST.length;
+  bgImageIndex = ((i % n) + n) % n;
+  bgStyleIndex = bgImageIndex % BG_STYLES.length;
+  refreshPreview();
+}
+function prevBackground() { setBackground(bgImageIndex - 1); }
+function nextBackground() { setBackground(bgImageIndex + 1); }
+function buildBgThumbs() {
+  const box = document.getElementById('bgThumbs');
+  if (!box) return;
+  box.innerHTML = '';
+  BG_LIST.forEach((src, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'bg-thumb'; b.dataset.idx = i;
+    b.title = 'Background ' + (i + 1); b.setAttribute('aria-label', 'Background ' + (i + 1));
+    const im = document.createElement('img');
+    im.loading = 'lazy'; im.alt = ''; im.src = src;
+    im.onerror = () => { b.style.visibility = 'hidden'; };
+    b.appendChild(im);
+    b.addEventListener('click', () => setBackground(i));
+    box.appendChild(b);
+  });
+  updateBgThumbs();
+}
+function updateBgThumbs() {
+  const box = document.getElementById('bgThumbs');
+  if (!box) return;
+  box.querySelectorAll('.bg-thumb').forEach(b => {
+    const on = Number(b.dataset.idx) === bgImageIndex;
+    b.classList.toggle('active', on);
+    if (on && box.offsetParent) {
+      const target = b.offsetLeft - (box.clientWidth - b.offsetWidth) / 2;
+      box.scrollTo({ left: target, behavior: 'smooth' });
+    }
+  });
+}
+document.addEventListener('DOMContentLoaded', () => {
+  buildBgThumbs();
+  document.querySelectorAll('.js-bg-prev').forEach(b => b.addEventListener('click', prevBackground));
+  document.querySelectorAll('.js-bg-next').forEach(b => b.addEventListener('click', nextBackground));
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+  const t = e.target, tag = t && t.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+  if (document.getElementById('settingsPanel').classList.contains('open')) return;
+  e.preventDefault();
+  if (e.key === 'ArrowLeft') prevBackground(); else nextBackground();
+});
+
+// ── Block browser-level zoom on touch screens (iOS gestures, two-finger pinch; double-tap is blocked by touch-action in CSS) ──
+['gesturestart', 'gesturechange', 'gestureend'].forEach(ev =>
+  document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
+document.addEventListener('touchmove', e => {
+  if (e.touches.length > 1 && !(e.target.closest && e.target.closest('#previewViewport'))) e.preventDefault();
+}, { passive: false });
 
 // ── Mobile tabs ──
 function switchMobileTab(tab) {
@@ -2734,8 +2986,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const watchIds = ['coverType', 'assignTitle', 'courseCode', 'courseTitle', 'stuName', 'stuReg', 'stuGroup', 'stuSection', 'stuTerm', 'stuFaculty'];
   watchIds.forEach(id => document.getElementById(id)?.addEventListener('input', schedulePreview));
 
-  document.getElementById('bgCycleBtn').addEventListener('click', cycleBackground);
-  document.getElementById('bgCycleBtnMobile').addEventListener('click', cycleBackground);
 
   // Settings panel: fonts/weights populate + current state sync + live binding
   populateStyleSelects();
