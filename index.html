@@ -1754,18 +1754,20 @@ const UNIV_NAME = 'Gazipur Agricultural University';
 const UNIV_ADDR = 'Salna, Gazipur-1706';
 
 // ── Lazy loading: PDF libraries and the optional fonts load only when needed ──
-const H2C_URL = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-const JSPDF_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+const H2C_URL = ['https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'];
+const JSPDF_URL = ['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'];
 const EXTRA_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Lato:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=Lexend:wght@300;400;500;600;700;800&family=Montserrat:wght@300;400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700;800&family=PT+Serif:wght@400;700&display=swap';
 
 function loadScript(src) {
-  return new Promise((resolve, reject) => {
+  // Accepts one URL or a list of mirrors; tries each in order until one loads
+  const urls = Array.isArray(src) ? src : [src];
+  return urls.reduce((chain, url) => chain.catch(() => new Promise((resolve, reject) => {
     const el = document.createElement('script');
-    el.src = src; el.async = true;
+    el.src = url; el.async = true;
     el.onload = resolve;
-    el.onerror = () => reject(new Error('Failed to load ' + src));
+    el.onerror = () => { el.remove(); reject(new Error('Failed to load ' + url)); };
     document.head.appendChild(el);
-  });
+  })), Promise.reject(new Error('start')));
 }
 
 let _pdfLibsPromise = null;
@@ -2783,6 +2785,31 @@ function validateBeforeDownload() {
 }
 document.addEventListener('input', e => { if (e.target.classList) e.target.classList.remove('field-error'); }, true);
 
+// Saves the PDF in a way that works on iPhone/iPad (share sheet to Files), Android and desktop
+async function savePdfFile(pdf, fileName) {
+  const blob = pdf.output('blob');
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isIOS && window.File && navigator.canShare) {
+    try {
+      const file = new File([blob], fileName, { type: 'application/pdf' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: fileName });
+        return 'shared';
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') return 'cancelled';
+      // share blocked (user gesture expired) or unsupported: fall through to normal download
+    }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = fileName; a.rel = 'noopener';
+  document.body.appendChild(a); a.click(); a.remove();
+  if (isIOS) setTimeout(() => { try { window.open(url, '_blank'); } catch (e) {} }, 400);
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  return 'saved';
+}
+
 async function generateAndDownload() {
   if (!validateBeforeDownload()) return;
   const btns = [document.getElementById('downloadBtn'), document.getElementById('downloadBtnMobile')].filter(Boolean);
@@ -2813,8 +2840,9 @@ async function generateAndDownload() {
     fitCover(tmp.querySelector('.gau-cover'));
 
     // Highest quality first; fall back to lower scales if the device runs out of canvas memory
-    const isMobile = /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent);
-    const scaleList = isMobile ? [3, 2.5, 2] : [3, 2.5, 2]; // 3x on A4 ≈ 288 DPI: sharp print, far lighter than 5x
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    // 3x on A4 ≈ 288 DPI: sharp print. iOS has a small canvas memory limit, so it starts lower and every device can fall back further
+    const scaleList = isIOS ? [2, 1.5, 1] : [3, 2.5, 2, 1.5, 1];
     let canvas = null;
     for (const sc of scaleList) {
       try {
@@ -2833,10 +2861,10 @@ async function generateAndDownload() {
     const _layoutName = coverLayout.charAt(0).toUpperCase() + coverLayout.slice(1);
     const _parts = [_clean(data.courseCode), _clean(data.courseTitle)].filter(Boolean);
     if (!_parts.length) _parts.push(_clean(data.assignTitle).substring(0, 40) || 'Cover');
-    pdf.save(`${_parts.join('_')}_${_layoutName}.pdf`);
+    const saveRes = await savePdfFile(pdf, `${_parts.join('_')}_${_layoutName}.pdf`);
 
     canvas.width = canvas.height = 0; // release canvas memory
-    showToast('success', 'PDF downloaded');
+    if (saveRes !== 'cancelled') showToast('success', 'PDF downloaded');
   } catch (err) {
     console.error(err);
     showToast('error', 'PDF failed: ' + err.message);
